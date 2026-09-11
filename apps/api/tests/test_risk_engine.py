@@ -1,4 +1,4 @@
-import unittest
+import pytest
 
 from app.risk.engine import calculate_risk
 from app.schemas.evaluation import Decision, DetectorResult, Severity
@@ -41,7 +41,7 @@ def test_prompt_injection_detection_applies_minimum_risk_floor():
         BASE_POLICY,
     )
 
-    assert risk >= 65
+    assert risk == 65
     assert decision == Decision.HUMAN_REVIEW
     assert any("containment" in reason.lower() for reason in reasons)
 
@@ -52,7 +52,7 @@ def test_privacy_detection_applies_minimum_risk_floor():
         BASE_POLICY,
     )
 
-    assert risk >= 45
+    assert risk == 45
     assert decision == Decision.MODIFY
     assert any("sensitive data" in reason.lower() for reason in reasons)
 
@@ -68,7 +68,7 @@ def test_grounding_policy_can_force_review_floor():
         policy,
     )
 
-    assert risk >= 60
+    assert risk == 60
     assert decision == Decision.HUMAN_REVIEW
     assert any("evidence" in reason.lower() for reason in reasons)
 
@@ -106,26 +106,44 @@ def test_detection_floors_do_not_reduce_high_weighted_risk():
     assert decision == Decision.BLOCK
 
 
-class TestDecisionBoundaries(unittest.TestCase):
-    def test_threshold_boundaries(self):
-        # Isolate decision thresholds from rounding and detection floors.
-        policy = {**BASE_POLICY, "weights": {"hallucination": 1.0}}
-        cases = [
-            (29, Decision.ALLOW),
-            (30, Decision.MODIFY),
-            (31, Decision.MODIFY),
-            (59, Decision.MODIFY),
-            (60, Decision.HUMAN_REVIEW),
-            (61, Decision.HUMAN_REVIEW),
-            (84, Decision.HUMAN_REVIEW),
-            (85, Decision.BLOCK),
-            (86, Decision.BLOCK),
-        ]
-        for score, expected in cases:
-            with self.subTest(score=score, expected=expected):
-                risk, _, decision, _ = calculate_risk(
-                    [detector("hallucination", score / 100, detected=False)],
-                    policy,
-                )
-                self.assertEqual(risk, score)
-                self.assertEqual(decision, expected)
+def test_confidence_averages_only_active_detectors():
+    active_privacy = detector("privacy", 0.1)
+    active_privacy.confidence = 0.8
+    inactive_grounding = detector("hallucination", 0.1, detected=False)
+    inactive_grounding.confidence = 0.1
+    active_injection = detector("injection", 0.1)
+    active_injection.confidence = 0.6
+
+    _, confidence, _, _ = calculate_risk(
+        [active_privacy, inactive_grounding, active_injection],
+        BASE_POLICY,
+    )
+
+    assert confidence == 0.7
+
+
+@pytest.mark.parametrize(
+    ("score", "expected"),
+    [
+        (29, Decision.ALLOW),
+        (30, Decision.MODIFY),
+        (31, Decision.MODIFY),
+        (59, Decision.MODIFY),
+        (60, Decision.HUMAN_REVIEW),
+        (61, Decision.HUMAN_REVIEW),
+        (84, Decision.HUMAN_REVIEW),
+        (85, Decision.BLOCK),
+        (86, Decision.BLOCK),
+    ],
+)
+def test_threshold_boundaries(score, expected):
+    # Isolate decision thresholds from rounding and detection floors.
+    policy = {**BASE_POLICY, "weights": {"hallucination": 1.0}}
+
+    risk, _, decision, _ = calculate_risk(
+        [detector("hallucination", score / 100, detected=False)],
+        policy,
+    )
+
+    assert risk == score
+    assert decision == expected
