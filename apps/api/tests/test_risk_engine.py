@@ -1,3 +1,5 @@
+import unittest
+
 from app.risk.engine import calculate_risk
 from app.schemas.evaluation import Decision, DetectorResult, Severity
 
@@ -19,9 +21,13 @@ def detector(category: str, score: float, *, detected: bool = True) -> DetectorR
     )
 
 
-def test_risk_uses_weighted_detector_scores():
+def test_risk_uses_equal_weight_detector_scores():
     risk, _, decision, _ = calculate_risk(
-        [detector("privacy", 0.9), detector("injection", 0.3), detector("hallucination", 0.0)],
+        [
+            detector("privacy", 0.9, detected=False),
+            detector("injection", 0.3, detected=False),
+            detector("hallucination", 0.0, detected=False),
+        ],
         BASE_POLICY,
     )
 
@@ -74,3 +80,52 @@ def test_no_detectors_returns_safe_default():
     assert confidence == 0.88
     assert decision == Decision.ALLOW
     assert reasons == []
+
+
+def test_risk_respects_unequal_policy_weights():
+    policy = {**BASE_POLICY, "weights": {"privacy": 3.0, "injection": 1.0, "hallucination": 1.0}}
+    risk, _, decision, _ = calculate_risk(
+        [
+            detector("privacy", 0.9, detected=False),
+            detector("injection", 0.3, detected=False),
+            detector("hallucination", 0.0, detected=False),
+        ],
+        policy,
+    )
+    # (0.9 * 3 + 0.3 * 1 + 0.0 * 1) / 5 * 100 = 60.
+    assert risk == 60
+    assert decision == Decision.HUMAN_REVIEW
+
+
+def test_detection_floors_do_not_reduce_high_weighted_risk():
+    risk, _, decision, _ = calculate_risk(
+        [detector(category, 0.9) for category in BASE_POLICY["weights"]],
+        BASE_POLICY,
+    )
+    assert risk == 90
+    assert decision == Decision.BLOCK
+
+
+class TestDecisionBoundaries(unittest.TestCase):
+    def test_threshold_boundaries(self):
+        # Isolate decision thresholds from rounding and detection floors.
+        policy = {**BASE_POLICY, "weights": {"hallucination": 1.0}}
+        cases = [
+            (29, Decision.ALLOW),
+            (30, Decision.MODIFY),
+            (31, Decision.MODIFY),
+            (59, Decision.MODIFY),
+            (60, Decision.HUMAN_REVIEW),
+            (61, Decision.HUMAN_REVIEW),
+            (84, Decision.HUMAN_REVIEW),
+            (85, Decision.BLOCK),
+            (86, Decision.BLOCK),
+        ]
+        for score, expected in cases:
+            with self.subTest(score=score, expected=expected):
+                risk, _, decision, _ = calculate_risk(
+                    [detector("hallucination", score / 100, detected=False)],
+                    policy,
+                )
+                self.assertEqual(risk, score)
+                self.assertEqual(decision, expected)
