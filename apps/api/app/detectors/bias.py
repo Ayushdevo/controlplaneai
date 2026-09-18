@@ -1,8 +1,10 @@
+import re
+
 from app.schemas.evaluation import DetectorResult, Evidence, Severity
 
 
 def detect_bias(text: str) -> DetectorResult:
-    markers = [term for term in ("always", "never", "women", "men", "old people", "foreigners") if term in text.lower()]
+    markers = [term for term in ("always", "never", "women", "men", "old people", "foreigners") if re.search(r"\b" + re.escape(term) + r"\b", text, re.I)]
     detected = bool(markers)
     return DetectorResult(
         category="bias",
