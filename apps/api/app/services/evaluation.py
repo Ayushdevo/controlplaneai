@@ -26,8 +26,12 @@ class EvaluationService:
         if prior_risk >= 0.45:
             risk = min(100, risk + round(prior_risk * 20))
             reasons.append("Prior conversation risk increased this turn's score")
-            if risk >= policy["thresholds"]["review"] and decision in (Decision.ALLOW, Decision.MODIFY):
+            if risk >= policy["thresholds"]["block"]:
+                decision = Decision.BLOCK
+            elif risk >= policy["thresholds"]["review"]:
                 decision = Decision.HUMAN_REVIEW
+            elif risk >= policy["thresholds"]["modify"]:
+                decision = Decision.MODIFY
         if input_pii.detected or output_pii.detected:
             reasons.insert(0, "Sensitive values were detected and withheld from audit details")
         coverage = round((1 - grounding.score) * 100)
