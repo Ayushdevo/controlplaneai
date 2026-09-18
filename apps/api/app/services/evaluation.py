@@ -21,7 +21,7 @@ class EvaluationService:
         grounding = evaluate_grounding(request.output, request.context)
         bias = detect_bias(request.output)
         detectors = [input_pii, output_pii, injection, grounding, bias]
-        prior_risk = store.conversation_risk(request.conversation_id)
+        prior_risk = store.conversation_risk(request.conversation_id, request.application)
         risk, confidence, decision, reasons = calculate_risk(detectors, policy)
         if prior_risk >= 0.45:
             risk = min(100, risk + round(prior_risk * 20))

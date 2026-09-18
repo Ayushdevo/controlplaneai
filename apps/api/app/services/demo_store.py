@@ -36,10 +36,10 @@ class DemoStore:
             evaluation.human_override = {"reviewer": request.reviewer, "decision": request.decision.value, "comment": request.comment, "timestamp": record.timestamp.isoformat(), "previous_decision": previous_decision}
         return record
 
-    def conversation_risk(self, conversation_id: str | None) -> float:
+    def conversation_risk(self, conversation_id: str | None, application: str | None = None) -> float:
         if not conversation_id:
             return 0.0
-        values = [item.risk_score / 100 for item in self.evaluations.values() if item.conversation_id == conversation_id]
+        values = [item.risk_score / 100 for item in self.evaluations.values() if item.conversation_id == conversation_id and (application is None or item.application == application)]
         return max(values, default=0.0)
 
     def analytics(self) -> dict:
