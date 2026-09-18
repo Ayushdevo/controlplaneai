@@ -87,3 +87,13 @@ def test_context_has_per_source_and_count_limits():
         with pytest.raises(ValidationError):
             EvaluationRequest(input='Hello', context=context)
     assert len(EvaluationRequest(input='Hello', context=['x'] * 50).context) == 50
+
+
+def test_review_requires_a_nonblank_bounded_identity():
+    from uuid import uuid4
+    from pydantic import ValidationError
+    from app.schemas.review import ReviewRequest
+    for name in ['   ', 'x' * 201]:
+        with pytest.raises(ValidationError):
+            ReviewRequest(audit_id=uuid4(), reviewer=name, decision='APPROVE')
+    assert ReviewRequest(audit_id=uuid4(), reviewer=' Jane ', decision='APPROVE').reviewer == 'Jane'
