@@ -28,12 +28,12 @@ def evaluate(request: EvaluationRequest) -> EvaluationResponse:
 
 @app.post("/v1/evaluate/input", response_model=EvaluationResponse)
 def evaluate_input(request: EvaluationRequest) -> EvaluationResponse:
-    return evaluation_service.evaluate(request.model_copy(update={"output": ""}))
+    return store.save_evaluation(evaluation_service.evaluate(request.model_copy(update={"output": ""})))
 
 
 @app.post("/v1/evaluate/output", response_model=EvaluationResponse)
 def evaluate_output(request: EvaluationRequest) -> EvaluationResponse:
-    return evaluation_service.evaluate(request)
+    return store.save_evaluation(evaluation_service.evaluate(request))
 
 
 @app.post("/v1/evaluate/action", response_model=ActionResponse)
