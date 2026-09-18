@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -21,7 +21,7 @@ class Severity(str, Enum):
 
 
 class EvaluationRequest(BaseModel):
-    application: str = Field(default="support", min_length=2)
+    application: Literal["support", "knowledge", "financial"] = "support"
     input: str = Field(min_length=1, max_length=12000)
     output: str = Field(default="", max_length=20000)
     context: list[str] = Field(default_factory=list)

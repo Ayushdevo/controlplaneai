@@ -63,3 +63,10 @@ def test_specialized_evaluations_are_saved_for_audit(endpoint):
     client = TestClient(app)
     result = client.post('/v1/evaluate/' + endpoint, json={'input':'Hello'}).json()
     assert client.get('/v1/incidents/' + result['audit_id']).status_code == 200
+
+
+def test_unknown_policy_is_rejected_at_api_boundary():
+    from fastapi.testclient import TestClient
+    from app.main import app
+    response = TestClient(app).post('/v1/evaluate', json={'input':'Hello', 'application':'finanical'})
+    assert response.status_code == 422
