@@ -105,3 +105,11 @@ def test_action_normalization_preserves_destructive_guardrail():
     assert evaluate_action(ActionRequest(agent_id='agent', action=' delete_record ')).decision == 'BLOCK'
     with pytest.raises(ValueError):
         ActionRequest(agent_id='  ', action='READ_DOCUMENT')
+
+
+def test_audit_timestamps_include_utc_offset():
+    from app.services.evaluation import EvaluationService
+    from app.schemas.evaluation import EvaluationRequest
+    result = EvaluationService().evaluate(EvaluationRequest(input='Hello'))
+    assert result.timestamp.utcoffset().total_seconds() == 0
+    assert result.model_dump(mode='json')['timestamp'].endswith('Z')

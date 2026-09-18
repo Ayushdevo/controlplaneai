@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Literal, Annotated
 from uuid import UUID, uuid4
@@ -67,7 +67,7 @@ class EvaluationResponse(BaseModel):
     detectors_run: list[str]
     model_calls: int = 0
     estimated_cost: float = 0
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     redacted_output: str | None = None
     request_id: str | None = None
     conversation_id: str | None = None
