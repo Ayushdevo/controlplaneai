@@ -1,11 +1,14 @@
+import re
+
 from app.schemas.evaluation import DetectorResult, Evidence, Severity
 
 
 def evaluate_grounding(output: str, context: list[str]) -> DetectorResult:
-    if not output:
+    if not output.strip():
         return DetectorResult(category="hallucination", score=0, confidence=0.65, severity=Severity.LOW, detected=False)
-    output_terms = {term.lower() for term in output.split() if len(term) > 4}
-    context_terms = {term.lower() for source in context for term in source.split() if len(term) > 4}
+    context = [source for source in context if source.strip()]
+    output_terms = {term.lower() for term in re.findall(r"\w+", output) if len(term) > 4}
+    context_terms = {term.lower() for source in context for term in re.findall(r"\w+", source) if len(term) > 4}
     overlap = len(output_terms & context_terms) / max(1, len(output_terms))
     grounding = min(1.0, overlap + (0.25 if context else 0))
     unsupported = grounding < 0.55

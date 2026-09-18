@@ -38,3 +38,10 @@ def test_bias_does_not_match_men_inside_words(text):
 def test_bias_retains_explicit_generalization():
     from app.detectors.bias import detect_bias
     assert detect_bias('Women always fail').detected
+
+
+def test_grounding_normalizes_punctuation_and_blank_sources():
+    from app.detectors.grounding import evaluate_grounding
+    assert not evaluate_grounding('Transfers require approval.', ['Transfers require approval']).detected
+    assert not evaluate_grounding('   ', []).detected
+    assert evaluate_grounding('Unsupported statement', ['   ']).score == 1
