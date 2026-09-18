@@ -45,10 +45,9 @@ class DemoStore:
     def analytics(self) -> dict:
         evaluations = list(self.evaluations.values())
         category_counts = Counter(
-            detector.category
+            category
             for evaluation in evaluations
-            for detector in evaluation.detectors
-            if detector.detected
+            for category in {detector.category for detector in evaluation.detectors if detector.detected}
         )
         return {
             "evaluations": len(evaluations),
