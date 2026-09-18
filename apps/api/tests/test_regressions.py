@@ -97,3 +97,11 @@ def test_review_requires_a_nonblank_bounded_identity():
         with pytest.raises(ValidationError):
             ReviewRequest(audit_id=uuid4(), reviewer=name, decision='APPROVE')
     assert ReviewRequest(audit_id=uuid4(), reviewer=' Jane ', decision='APPROVE').reviewer == 'Jane'
+
+
+def test_action_normalization_preserves_destructive_guardrail():
+    from app.schemas.action import ActionRequest
+    from app.services.agent_guard import evaluate_action
+    assert evaluate_action(ActionRequest(agent_id='agent', action=' delete_record ')).decision == 'BLOCK'
+    with pytest.raises(ValueError):
+        ActionRequest(agent_id='  ', action='READ_DOCUMENT')
