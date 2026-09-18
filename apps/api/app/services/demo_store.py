@@ -1,7 +1,7 @@
 from collections import Counter
 from uuid import UUID
 
-from app.schemas.evaluation import EvaluationResponse
+from app.schemas.evaluation import Decision, EvaluationResponse
 from app.schemas.review import ReviewRecord, ReviewRequest
 
 
@@ -26,7 +26,13 @@ class DemoStore:
         evaluation = self.evaluations.get(request.audit_id)
         if evaluation:
             final = {"APPROVE": "ALLOW", "BLOCK": "BLOCK", "MODIFY": "MODIFY", "FALSE_POSITIVE": "ALLOW", "NEEDS_INVESTIGATION": "HUMAN_REVIEW"}[request.decision.value]
-            evaluation.decision = final
+            evaluation.decision = Decision(final)
+            evaluation.recommended_action = {
+                Decision.ALLOW: "Allow response",
+                Decision.MODIFY: "Redact sensitive values before release",
+                Decision.HUMAN_REVIEW: "Route to a qualified reviewer before release",
+                Decision.BLOCK: "Block delivery and investigate the signal",
+            }[evaluation.decision]
             evaluation.human_override = {"reviewer": request.reviewer, "decision": request.decision.value, "comment": request.comment, "timestamp": record.timestamp.isoformat(), "previous_decision": previous_decision}
         return record
 

@@ -113,3 +113,15 @@ def test_audit_timestamps_include_utc_offset():
     result = EvaluationService().evaluate(EvaluationRequest(input='Hello'))
     assert result.timestamp.utcoffset().total_seconds() == 0
     assert result.model_dump(mode='json')['timestamp'].endswith('Z')
+
+
+def test_review_updates_recommended_action_and_keeps_enum():
+    from app.services.demo_store import DemoStore
+    from app.services.evaluation import EvaluationService
+    from app.schemas.evaluation import EvaluationRequest, Decision
+    from app.schemas.review import ReviewRequest
+    local = DemoStore()
+    event = local.save_evaluation(EvaluationService().evaluate(EvaluationRequest(input='Hello')))
+    local.add_review(ReviewRequest(audit_id=event.audit_id, reviewer='Jane', decision='BLOCK'), event.decision)
+    assert event.decision is Decision.BLOCK
+    assert event.recommended_action.startswith('Block')
