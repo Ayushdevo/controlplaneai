@@ -4,9 +4,9 @@ from app.schemas.evaluation import DetectorResult, Evidence, Severity
 
 
 SIGNATURES = {
-    "instruction_override": re.compile(r"(ignore|disregard|bypass).{0,30}(previous|system|developer|safety)", re.I),
-    "prompt_extraction": re.compile(r"(reveal|show|print|extract).{0,30}(system prompt|hidden instructions)", re.I),
-    "role_hijack": re.compile(r"you are now|act as an unrestricted|jailbreak", re.I),
+    "instruction_override": re.compile(r"(ignore|disregard|bypass).{0,30}(previous|system|developer|safety)", re.I | re.S),
+    "prompt_extraction": re.compile(r"(reveal|show|print|extract).{0,30}(system prompt|hidden instructions)", re.I | re.S),
+    "role_hijack": re.compile(r"you are now|act as an unrestricted|jailbreak", re.I | re.S),
 }
 
 
