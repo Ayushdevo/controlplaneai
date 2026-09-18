@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Any, Literal
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class Decision(str, Enum):
@@ -27,6 +27,14 @@ class EvaluationRequest(BaseModel):
     context: list[str] = Field(default_factory=list)
     conversation_id: str | None = None
     request_id: str | None = Field(default=None, max_length=128)
+
+
+    @field_validator("input")
+    @classmethod
+    def reject_blank_input(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("input must contain non-whitespace text")
+        return value
 
 
 class Evidence(BaseModel):

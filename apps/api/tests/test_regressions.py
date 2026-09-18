@@ -70,3 +70,11 @@ def test_unknown_policy_is_rejected_at_api_boundary():
     from app.main import app
     response = TestClient(app).post('/v1/evaluate', json={'input':'Hello', 'application':'finanical'})
     assert response.status_code == 422
+
+
+def test_blank_input_is_rejected_without_stripping_valid_text():
+    from pydantic import ValidationError
+    from app.schemas.evaluation import EvaluationRequest
+    with pytest.raises(ValidationError):
+        EvaluationRequest(input=' \n\t ')
+    assert EvaluationRequest(input='  code  ').input == '  code  '
