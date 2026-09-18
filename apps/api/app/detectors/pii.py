@@ -13,12 +13,19 @@ PATTERNS = {
 
 def detect_pii(text: str) -> tuple[DetectorResult, str]:
     entities: list[dict] = []
+    candidates = [
+        (match.start(), match.end(), entity_type, confidence)
+        for entity_type, (pattern, confidence) in PATTERNS.items()
+        for match in pattern.finditer(text)
+    ]
+    spans = []
+    for start, end, entity_type, confidence in sorted(candidates, key=lambda item: (-item[3], item[0])):
+        if not any(start < other_end and end > other_start for other_start, other_end, *_ in spans):
+            spans.append((start, end, entity_type, confidence))
     redacted = text
-    for entity_type, (pattern, confidence) in PATTERNS.items():
-        matches = list(pattern.finditer(text))
-        for match in reversed(matches):
-            entities.append({"type": entity_type, "confidence": confidence})
-            redacted = redacted[: match.start()] + f"[{entity_type}_REDACTED]" + redacted[match.end() :]
+    for start, end, entity_type, confidence in sorted(spans, reverse=True):
+        entities.append({"type": entity_type, "confidence": confidence})
+        redacted = redacted[:start] + f"[{entity_type}_REDACTED]" + redacted[end:]
     detected = bool(entities)
     result = DetectorResult(
         category="privacy",

@@ -11,3 +11,13 @@ def test_input_privacy_is_not_overwritten_by_clean_output():
     assert calculate_risk([private, clean], get_policy('support'))[:3] == calculate_risk(
         [clean, private], get_policy('support')
     )[:3]
+
+
+@pytest.mark.parametrize("text, expected", [
+    ('Mail a@b.co then call +1 212 555 0199 please', 'Mail [EMAIL_REDACTED] then call [PHONE_REDACTED] please'),
+    ('Card 4111 1111 1111 1111 end', 'Card [CREDIT_CARD_REDACTED] end'),
+])
+def test_redaction_uses_original_nonoverlapping_spans(text, expected):
+    result, redacted = detect_pii(text)
+    assert redacted == expected
+    assert len(result.metadata['entities']) == expected.count('_REDACTED]')
