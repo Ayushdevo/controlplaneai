@@ -78,3 +78,12 @@ def test_blank_input_is_rejected_without_stripping_valid_text():
     with pytest.raises(ValidationError):
         EvaluationRequest(input=' \n\t ')
     assert EvaluationRequest(input='  code  ').input == '  code  '
+
+
+def test_context_has_per_source_and_count_limits():
+    from pydantic import ValidationError
+    from app.schemas.evaluation import EvaluationRequest
+    for context in [['x'] * 51, ['x' * 20001]]:
+        with pytest.raises(ValidationError):
+            EvaluationRequest(input='Hello', context=context)
+    assert len(EvaluationRequest(input='Hello', context=['x'] * 50).context) == 50

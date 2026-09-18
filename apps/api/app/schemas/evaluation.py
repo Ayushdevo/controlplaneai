@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Any, Literal
+from typing import Any, Literal, Annotated
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
@@ -24,7 +24,7 @@ class EvaluationRequest(BaseModel):
     application: Literal["support", "knowledge", "financial"] = "support"
     input: str = Field(min_length=1, max_length=12000)
     output: str = Field(default="", max_length=20000)
-    context: list[str] = Field(default_factory=list)
+    context: list[Annotated[str, Field(max_length=20000)]] = Field(default_factory=list, max_length=50)
     conversation_id: str | None = None
     request_id: str | None = Field(default=None, max_length=128)
 
