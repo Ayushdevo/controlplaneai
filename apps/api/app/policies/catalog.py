@@ -8,5 +8,7 @@ POLICIES = {
 
 
 def get_policy(application: str) -> dict:
-    return deepcopy(POLICIES.get(application, POLICIES["support"]))
+    if application not in POLICIES:
+        raise ValueError(f"Unknown application policy: {application}")
+    return deepcopy(POLICIES[application])
 
