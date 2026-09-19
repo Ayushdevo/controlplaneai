@@ -1,3 +1,5 @@
+import math
+
 from app.schemas.evaluation import Decision, DetectorResult
 
 
@@ -6,7 +8,11 @@ def calculate_risk(detectors: list[DetectorResult], policy: dict) -> tuple[int, 
     for detector in detectors:
         scores[detector.category] = max(scores.get(detector.category, 0), detector.score)
     weights = policy["weights"]
+    if not weights or any(isinstance(w, bool) or not isinstance(w, (int, float)) or not math.isfinite(w) or w < 0 for w in weights.values()):
+        raise ValueError("Policy weights must be finite non-negative numbers")
     total_weight = sum(weights.values())
+    if not math.isfinite(total_weight) or total_weight <= 0:
+        raise ValueError("Policy weights must have a finite positive total")
     weighted = sum(scores.get(category, 0) * weight for category, weight in weights.items())
     risk = round((weighted / total_weight) * 100) if total_weight else 0
     privacy = next((item for item in detectors if item.category == "privacy" and item.detected), None)
@@ -35,3 +41,4 @@ def calculate_risk(detectors: list[DetectorResult], policy: dict) -> tuple[int, 
     reasons = [f"{detector.category.title()} signal detected ({detector.confidence:.0%} confidence)" for detector in active]
     reasons.extend(reason for _, reason in floors)
     return risk, confidence, decision, reasons
+
