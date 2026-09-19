@@ -4,6 +4,10 @@ from app.schemas.evaluation import Decision, DetectorResult
 
 
 def calculate_risk(detectors: list[DetectorResult], policy: dict) -> tuple[int, float, Decision, list[str]]:
+    thresholds = policy["thresholds"]
+    ordered = [thresholds.get(name) for name in ("modify", "review", "block")]
+    if any(isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 100 for value in ordered) or ordered != sorted(ordered):
+        raise ValueError("Policy thresholds must be ordered integers between 0 and 100")
     scores: dict[str, float] = {}
     for detector in detectors:
         scores[detector.category] = max(scores.get(detector.category, 0), detector.score)
