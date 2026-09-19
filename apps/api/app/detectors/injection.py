@@ -11,7 +11,9 @@ SIGNATURES = {
 
 
 def detect_injection(text: str) -> DetectorResult:
-    matches = [name for name, pattern in SIGNATURES.items() if pattern.search(text)]
+    # PDF and chat wrapping must not split fixed attack phrases.
+    normalized = " ".join(text.split())
+    matches = [name for name, pattern in SIGNATURES.items() if pattern.search(normalized)]
     detected = bool(matches)
     score = min(1.0, 0.62 + (0.12 * len(matches))) if detected else 0.02
     return DetectorResult(
