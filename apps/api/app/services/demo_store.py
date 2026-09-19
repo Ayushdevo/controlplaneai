@@ -21,6 +21,8 @@ class DemoStore:
         return self.evaluations.get(audit_id)
 
     def add_review(self, request: ReviewRequest, previous_decision: str) -> ReviewRecord:
+        if request.audit_id not in self.evaluations:
+            raise ValueError("Cannot review an unknown evaluation")
         record = ReviewRecord(**request.model_dump(), timestamp=__import__("datetime").datetime.now(__import__("datetime").timezone.utc), previous_decision=previous_decision)
         self.reviews.append(record)
         evaluation = self.evaluations.get(request.audit_id)
@@ -64,3 +66,4 @@ class DemoStore:
 
 
 store = DemoStore()
+
