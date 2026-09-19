@@ -11,14 +11,15 @@ class DemoStore:
         self.reviews: list[ReviewRecord] = []
 
     def save_evaluation(self, evaluation: EvaluationResponse) -> EvaluationResponse:
-        self.evaluations[evaluation.audit_id] = evaluation
-        return evaluation
+        self.evaluations[evaluation.audit_id] = evaluation.model_copy(deep=True)
+        return evaluation.model_copy(deep=True)
 
     def list_incidents(self) -> list[EvaluationResponse]:
-        return [item for item in self.evaluations.values() if item.decision != "ALLOW"]
+        return [item.model_copy(deep=True) for item in self.evaluations.values() if item.decision != "ALLOW"]
 
     def get_evaluation(self, audit_id: UUID) -> EvaluationResponse | None:
-        return self.evaluations.get(audit_id)
+        evaluation = self.evaluations.get(audit_id)
+        return evaluation.model_copy(deep=True) if evaluation is not None else None
 
     def add_review(self, request: ReviewRequest, previous_decision: str) -> ReviewRecord:
         if request.audit_id not in self.evaluations:

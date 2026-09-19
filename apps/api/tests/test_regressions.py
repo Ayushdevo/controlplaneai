@@ -123,6 +123,7 @@ def test_review_updates_recommended_action_and_keeps_enum():
     local = DemoStore()
     event = local.save_evaluation(EvaluationService().evaluate(EvaluationRequest(input='Hello')))
     local.add_review(ReviewRequest(audit_id=event.audit_id, reviewer='Jane', decision='BLOCK'), event.decision)
+    event = local.get_evaluation(event.audit_id)
     assert event.decision is Decision.BLOCK
     assert event.recommended_action.startswith('Block')
 
