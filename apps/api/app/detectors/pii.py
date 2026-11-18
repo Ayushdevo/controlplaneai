@@ -6,7 +6,7 @@ from app.schemas.evaluation import DetectorResult, Evidence, Severity
 PATTERNS = {
     "EMAIL": (re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b"), 0.96),
     "PHONE": (re.compile(r"(?<!\d)(?:\+?\d[\d ()-]{8,}\d)(?!\d)"), 0.92),
-    "CREDIT_CARD": (re.compile(r"(?<!\d)(?:\d[ -]*?){13,16}(?!\d)"), 0.98),
+    "CREDIT_CARD": (re.compile(r"(?<!\d)(?:\d[ -]*){12,18}\d(?![ -]*\d)"), 0.98),
     "GOVERNMENT_ID": (re.compile(r"\b[A-Z]{1,3}-?\d{6,12}\b"), 0.82),
 }
 

@@ -25,9 +25,16 @@ class EvaluationRequest(BaseModel):
     input: str = Field(min_length=1, max_length=12000)
     output: str = Field(default="", max_length=20000)
     context: list[Annotated[str, Field(max_length=20000)]] = Field(default_factory=list, max_length=50)
-    conversation_id: str | None = None
+    conversation_id: str | None = Field(default=None, min_length=1, max_length=128)
     request_id: str | None = Field(default=None, max_length=128)
 
+
+    @field_validator("conversation_id")
+    @classmethod
+    def reject_blank_conversation_id(cls, value: str | None) -> str | None:
+        if value is not None and not value.strip():
+            raise ValueError("conversation_id must contain non-whitespace text")
+        return value
 
     @field_validator("input")
     @classmethod
@@ -70,9 +77,10 @@ class EvaluationResponse(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     redacted_output: str | None = None
     request_id: str | None = None
-    conversation_id: str | None = None
+    conversation_id: str | None = Field(default=None, min_length=1, max_length=128)
     application: str
     recommended_action: str
     policy_name: str
     conversation_risk: float = Field(default=0, ge=0, le=1)
     human_override: dict[str, Any] | None = None
+
